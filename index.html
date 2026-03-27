@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WEALTHY · Portfolio Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#07080a;--s1:#0d0f13;--s2:#12151b;--s3:#171b23;--border:#1c2130;--border2:#28354a;--gold:#c9a84c;--gold2:#e8c96a;--gold3:rgba(201,168,76,.10);--green:#2ec97a;--green2:rgba(46,201,122,.10);--red:#e05252;--red2:rgba(224,82,82,.10);--blue:#5aabff;--blue2:rgba(90,171,255,.10);--muted:#3d4d63;--muted2:#5e738a;--text:#dde4ee;--text2:#8fa3bc;--r:12px}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;font-weight:400;min-height:100vh;overflow-x:hidden}
+body::after{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='.025'/%3E%3C/svg%3E");opacity:.6}
+.header{position:sticky;top:0;z-index:200;background:rgba(7,8,10,.95);backdrop-filter:blur(24px);border-bottom:1px solid var(--border);padding:0 36px;height:62px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.logo{font-family:'Space Mono',monospace;font-size:.72rem;font-weight:700;letter-spacing:5px;color:var(--gold);white-space:nowrap}
+.hcenter{display:flex;align-items:center;gap:8px}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--muted);flex-shrink:0;transition:background .3s}
+.dot.on{background:var(--green);animation:pulse 2.5s infinite}
+.dot.err{background:var(--red)}
+.dot.saving{background:var(--gold);animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 currentColor}60%{box-shadow:0 0 0 5px transparent}}
+.lbl{font-family:'Space Mono',monospace;font-size:.56rem;color:var(--muted2);letter-spacing:1px;white-space:nowrap}
+.rbtn{background:none;border:1px solid var(--border);border-radius:6px;color:var(--muted2);font-family:'Space Mono',monospace;font-size:.56rem;padding:5px 11px;cursor:pointer;transition:all .2s;letter-spacing:1px;white-space:nowrap}
+.rbtn:hover{border-color:var(--gold);color:var(--gold)}
+.rbtn:disabled{opacity:.35;cursor:default}
+.hstats{display:flex;align-items:center;gap:20px}
+.hst{text-align:right}
+.hst-l{font-size:.46rem;letter-spacing:2px;text-transform:uppercase;color:var(--muted2)}
+.hst-v{font-family:'Space Mono',monospace;font-size:.88rem;color:var(--gold)}
+.nav{background:var(--s1);border-bottom:1px solid var(--border);padding:0 36px;display:flex;overflow-x:auto;position:sticky;top:62px;z-index:190}
+.nav::-webkit-scrollbar{height:0}
+.nb{padding:13px 18px;background:none;border:none;border-bottom:2px solid transparent;color:var(--muted2);font-family:'Syne',sans-serif;font-size:.56rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:all .2s;white-space:nowrap;margin-bottom:-1px}
+.nb:hover{color:var(--text)}.nb.active{color:var(--gold);border-bottom-color:var(--gold)}
+.panel{display:none}.panel.active{display:block}
+.wrap{max-width:1120px;margin:0 auto;padding:36px 24px 80px;position:relative;z-index:1}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.panel.active .wrap{animation:fadeUp .28s ease}
+.sl{font-size:.48rem;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--muted);margin-bottom:13px;display:flex;align-items:center;gap:10px}
+.sl::after{content:'';flex:1;height:1px;background:var(--border)}
+.kg{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:11px;margin-bottom:28px}
+.kc{background:var(--s1);border:1px solid var(--border);border-radius:var(--r);padding:18px 20px;position:relative;overflow:hidden;transition:border-color .2s,transform .2s;cursor:default}
+.kc::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,var(--gold3),transparent 55%);opacity:0;transition:opacity .2s}
+.kc:hover{border-color:var(--border2);transform:translateY(-2px)}.kc:hover::before{opacity:1}
+.kc.gold{border-left:3px solid var(--gold)}.kc.green{border-left:3px solid var(--green)}.kc.blue{border-left:3px solid var(--blue)}.kc.dim{border-left:3px solid var(--border2)}
+.kl{font-size:.46rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted2);margin-bottom:9px}
+.kv{font-family:'Space Mono',monospace;font-size:1.45rem;line-height:1;color:var(--text);font-weight:700}
+.kv.big{font-size:1.85rem;color:var(--gold)}.kv.ld{color:var(--muted)}
+.ks{font-size:.58rem;color:var(--muted2);margin-top:6px}
+.badge{display:inline-block;padding:2px 7px;border-radius:4px;font-family:'Space Mono',monospace;font-size:.56rem;margin-top:5px}
+.badge.pos{background:var(--green2);color:var(--green)}.badge.neg{background:var(--red2);color:var(--red)}.badge.neu{background:var(--blue2);color:var(--blue)}
+.tw{background:var(--s1);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:24px}
+table{width:100%;border-collapse:collapse}
+thead tr{background:var(--s2);border-bottom:1.5px solid var(--border)}
+th{padding:11px 14px;text-align:left;font-size:.46rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted2)}
+th.r{text-align:right}
+tbody tr{border-top:1px solid var(--border);transition:background .12s}
+tbody tr:hover{background:rgba(255,255,255,.016)}
+td{padding:11px 14px;font-size:.78rem;color:var(--text2)}
+td.r{text-align:right;font-family:'Space Mono',monospace;font-size:.72rem}
+td.tk{font-family:'Space Mono',monospace;font-weight:700;color:var(--text);font-size:.8rem}
+.pos{color:var(--green)}.neg{color:var(--red)}.neu{color:var(--muted2)}
+.ed{cursor:pointer;transition:all .15s;border-radius:4px;padding:3px 6px;margin:-3px -6px;display:inline-block;min-width:30px}
+.ed:hover{background:var(--gold3);color:var(--gold)}
+.ed[contenteditable="true"]{background:var(--s3);outline:2px solid var(--gold);color:var(--gold2);cursor:text}
+.xbtn{background:none;border:none;color:var(--muted);cursor:pointer;font-size:.72rem;padding:3px 6px;border-radius:4px;transition:color .15s;line-height:1}
+.xbtn:hover{color:var(--red)}
+.ac{background:var(--s1);border:1px solid var(--border);border-radius:var(--r);padding:20px 24px;margin-bottom:28px}
+.ab{display:flex;height:8px;border-radius:4px;overflow:hidden;gap:2px;margin:12px 0}
+.as{height:100%;border-radius:2px;transition:opacity .2s}.as:hover{opacity:.72}
+.al{display:flex;flex-wrap:wrap;gap:12px}
+.ai{display:flex;align-items:center;gap:6px}
+.ad{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.an{font-size:.6rem;color:var(--text2)}.ap{font-family:'Space Mono',monospace;font-size:.62rem;color:var(--text);margin-left:3px}
+.st-ok{background:var(--green2);color:var(--green);padding:2px 8px;border-radius:4px;font-size:.58rem;font-weight:700;font-family:'Space Mono',monospace}
+.st-hi{background:var(--red2);color:var(--red);padding:2px 8px;border-radius:4px;font-size:.58rem;font-weight:700;font-family:'Space Mono',monospace}
+.st-nk{background:var(--gold3);color:var(--gold);padding:2px 8px;border-radius:4px;font-size:.58rem;font-weight:700;font-family:'Space Mono',monospace}
+.mb-w{display:flex;align-items:center;gap:6px;justify-content:flex-end}
+.mb{height:3px;border-radius:2px;background:var(--border2);width:50px;flex-shrink:0}
+.mb-f{height:100%;border-radius:2px;background:var(--gold)}
+.pg{display:grid;grid-template-columns:repeat(4,1fr);gap:11px;margin-bottom:24px}
+.pc{background:var(--s1);border:1px solid var(--border);border-radius:var(--r);padding:18px;text-align:center;transition:border-color .2s}
+.pc:hover{border-color:var(--gold)}.pc.feat{border-color:rgba(201,168,76,.4);background:rgba(201,168,76,.04)}
+.pc .py{font-size:.48rem;letter-spacing:2px;text-transform:uppercase;color:var(--muted2);margin-bottom:8px}
+.pc .pv{font-family:'Space Mono',monospace;font-size:.95rem;color:var(--gold);line-height:1;margin-bottom:5px}
+.pc .pr{font-family:'Space Mono',monospace;font-size:.66rem;color:var(--green)}
+.pc .prl{font-size:.48rem;color:var(--muted2);margin-top:3px}
+.toast{position:fixed;bottom:24px;right:24px;z-index:999;background:var(--s2);border:1px solid var(--border2);border-radius:8px;padding:10px 18px;font-family:'Space Mono',monospace;font-size:.62rem;color:var(--gold);box-shadow:0 8px 32px rgba(0,0,0,.5);transform:translateY(80px);opacity:0;transition:all .3s;pointer-events:none}
+.toast.show{transform:translateY(0);opacity:1}.toast.gt{color:var(--green);border-color:var(--green2)}.toast.rt{color:var(--red);border-color:var(--red2)}
+@media(max-width:700px){.header{padding:0 16px}.nav{padding:0 16px}.wrap{padding:24px 16px 60px}.kg{grid-template-columns:1fr 1fr}.pg{grid-template-columns:1fr 1fr}.hstats{display:none}}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="logo">◆ WEALTHY</div>
+  <div class="hcenter">
+    <div class="dot" id="dot"></div>
+    <span class="lbl" id="lbl">inicializando...</span>
+    <button class="rbtn" id="rfbtn" onclick="fetchQuotes()" disabled>↻ COTAÇÕES</button>
+  </div>
+  <div class="hstats">
+    <div class="hst"><div class="hst-l">Patrimônio</div><div class="hst-v" id="h-tot">—</div></div>
+    <div class="hst"><div class="hst-l">USD/BRL</div><div class="hst-v" id="h-usd">—</div></div>
+    <div class="hst"><div class="hst-l">Ações</div><div class="hst-v" id="h-rv">—</div></div>
+  </div>
+</div>
+<div class="nav">
+  <button class="nb active" onclick="go('visao',this)">Visão Geral</button>
+  <button class="nb" onclick="go('acoes',this)">Ações</button>
+  <button class="nb" onclick="go('rfixo',this)">Renda Fixa</button>
+  <button class="nb" onclick="go('dolar',this)">Dólar</button>
+  <button class="nb" onclick="go('proventos',this)">Proventos</button>
+  <button class="nb" onclick="go('projecao',this)">Projeção</button>
+  <button class="nb" onclick="go('teto',this)">Preço Teto</button>
+</div>
+
+<!-- VISÃO GERAL -->
+<div class="panel active" id="panel-visao"><div class="wrap">
+  <div class="sl">Patrimônio consolidado</div>
+  <div class="kg">
+    <div class="kc gold"><div class="kl">Total</div><div class="kv big ld" id="v-tot">...</div><div class="ks" id="v-tot-s"></div></div>
+    <div class="kc green"><div class="kl">Renda Variável</div><div class="kv ld" id="v-rv">...</div><div class="ks" id="v-rv-s"></div></div>
+    <div class="kc blue"><div class="kl">Reserva Emergência</div><div class="kv ld" id="v-re">...</div><div class="ks" id="v-re-s"></div></div>
+    <div class="kc gold"><div class="kl">Dólar</div><div class="kv ld" id="v-dol">...</div><div class="ks" id="v-dol-s"></div></div>
+    <div class="kc dim"><div class="kl">Renda Fixa</div><div class="kv ld" id="v-rf">...</div><div class="ks" id="v-rf-s"></div></div>
+    <div class="kc dim"><div class="kl">Kids</div><div class="kv">21,5K</div><div class="ks">R$ 21.462,30</div></div>
+    <div class="kc dim"><div class="kl">Proventos Totais</div><div class="kv">180K</div><div class="ks">R$ 180.492,10 desde 2021</div></div>
+    <div class="kc dim"><div class="kl">Cotações atualizadas</div><div class="kv ld" id="v-upd" style="font-size:.8rem">—</div><div class="ks">via BRAPI</div></div>
+  </div>
+  <div class="sl">Alocação</div>
+  <div class="ac"><div class="ab" id="abar"></div><div class="al" id="aleg"></div></div>
+  <div id="err-box" style="display:none;background:var(--red2);border:1px solid var(--red);border-radius:8px;padding:11px 15px;font-size:.72rem;color:var(--red)">
+    ⚠ Cotações offline — verifique a conexão. Usando preços médios como referência.
+  </div>
+</div></div>
+
+<!-- AÇÕES -->
+<div class="panel" id="panel-acoes"><div class="wrap">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+    <div><div class="sl" style="margin-bottom:3px">Posições em Ações</div>
+    <div style="font-size:.58rem;color:var(--muted2)">✏ Clique em <span style="color:var(--gold)">Qtd</span> ou <span style="color:var(--gold)">PM</span> para editar · salva na nuvem ☁</div></div>
+    <button class="rbtn" onclick="addStock()" style="border-color:var(--green);color:var(--green)">+ Ação</button>
+  </div>
+  <div class="kg" style="margin-bottom:20px">
+    <div class="kc gold"><div class="kl">Valor Atual</div><div class="kv big ld" id="a-tot">...</div></div>
+    <div class="kc dim"><div class="kl">Total Investido</div><div class="kv ld" id="a-inv">...</div></div>
+    <div class="kc green"><div class="kl">Resultado</div><div class="kv ld" id="a-res">...</div><div class="ks" id="a-res-s"></div></div>
+  </div>
+  <div class="tw"><table>
+    <thead><tr><th>Ticket</th><th class="r">Qtd ✏</th><th class="r">Cotação</th><th class="r">PM ✏</th><th class="r">Var%</th><th class="r">Total</th><th class="r">% Cart.</th><th class="r"></th></tr></thead>
+    <tbody id="stb"></tbody>
+  </table></div>
+</div></div>
+
+<!-- RENDA FIXA -->
+<div class="panel" id="panel-rfixo"><div class="wrap">
+  <div style="font-size:.58rem;color:var(--muted2);margin-bottom:16px">✏ Clique nos <span style="color:var(--gold)">valores</span> para editar · salva na nuvem ☁</div>
+  <div class="kg" style="margin-bottom:20px">
+    <div class="kc gold"><div class="kl">Renda Fixa</div><div class="kv big ld" id="rf-tot">...</div></div>
+    <div class="kc blue"><div class="kl">Reserva Emergência</div><div class="kv ld" id="re-tot">...</div></div>
+    <div class="kc dim"><div class="kl">Combinado</div><div class="kv ld" id="rfre-tot">...</div></div>
+  </div>
+  <div class="sl">Renda Fixa</div>
+  <div class="tw" style="margin-bottom:20px"><table>
+    <thead><tr><th>Título</th><th>Remuneração</th><th>Vencimento</th><th class="r">Valor ✏</th><th class="r">%</th><th></th></tr></thead>
+    <tbody id="rftb"></tbody>
+  </table><div style="padding:10px 14px"><button class="rbtn" onclick="addRF()" style="border-color:var(--green);color:var(--green)">+ Título</button></div></div>
+  <div class="sl">Reserva de Emergência</div>
+  <div class="tw"><table>
+    <thead><tr><th>Conta</th><th>Tipo</th><th>Vencimento</th><th class="r">Valor ✏</th><th class="r">%</th><th></th></tr></thead>
+    <tbody id="retb"></tbody>
+  </table><div style="padding:10px 14px"><button class="rbtn" onclick="addRE()" style="border-color:var(--green);color:var(--green)">+ Conta</button></div></div>
+</div></div>
+
+<!-- DÓLAR -->
+<div class="panel" id="panel-dolar"><div class="wrap">
+  <div style="font-size:.58rem;color:var(--muted2);margin-bottom:16px">✏ Clique em <span style="color:var(--gold)">Qtd USD</span> · cotação USD/BRL ao vivo</div>
+  <div class="kg" style="margin-bottom:20px">
+    <div class="kc gold"><div class="kl">Total USD</div><div class="kv big ld" id="d-usd">...</div></div>
+    <div class="kc green"><div class="kl">Total BRL</div><div class="kv ld" id="d-brl">...</div></div>
+    <div class="kc blue"><div class="kl">Cotação ao vivo</div><div class="kv ld" id="d-rate">...</div><div class="ks">USD/BRL</div></div>
+  </div>
+  <div class="tw"><table>
+    <thead><tr><th>Conta</th><th class="r">Qtd USD ✏</th><th class="r">Em BRL</th><th class="r">%</th><th></th></tr></thead>
+    <tbody id="dtb"></tbody>
+  </table><div style="padding:10px 14px"><button class="rbtn" onclick="addDol()" style="border-color:var(--green);color:var(--green)">+ Conta</button></div></div>
+</div></div>
+
+<!-- PROVENTOS -->
+<div class="panel" id="panel-proventos"><div class="wrap">
+  <div class="kg" style="margin-bottom:20px">
+    <div class="kc gold"><div class="kl">Proventos Totais</div><div class="kv big">180K</div><div class="ks">R$ 180.492,10</div></div>
+    <div class="kc green"><div class="kl">2025</div><div class="kv">68,5K</div><div class="ks">R$ 68.491,27</div></div>
+    <div class="kc dim"><div class="kl">2026 (parcial)</div><div class="kv">60K</div><div class="ks">R$ 60.054,59</div></div>
+    <div class="kc dim"><div class="kl">Yield 2025</div><div class="kv" style="color:var(--green)">6,0%</div><div class="ks">sobre PL ~R$ 1,13M</div></div>
+  </div>
+  <div class="sl">Evolução de proventos</div>
+  <div class="ac" style="padding:24px"><div id="pbars" style="display:flex;align-items:flex-end;gap:10px;height:140px;padding:0 4px;margin-bottom:4px"></div></div>
+  <div class="sl" style="margin-top:20px">Histórico</div>
+  <div class="tw"><table>
+    <thead><tr><th>Ano</th><th class="r">PL Ref.</th><th class="r">Proventos</th><th class="r">Yield</th><th class="r">Crescimento</th></tr></thead>
+    <tbody>
+      <tr><td class="tk">2021</td><td class="r">R$ 64.779</td><td class="r" style="color:var(--gold)">R$ 922,23</td><td class="r">1,4%</td><td class="r neu">—</td></tr>
+      <tr><td class="tk">2022</td><td class="r">R$ 103.924</td><td class="r" style="color:var(--gold)">R$ 7.461,84</td><td class="r">7,2%</td><td class="r pos">+709%</td></tr>
+      <tr><td class="tk">2023</td><td class="r">R$ 279.593</td><td class="r" style="color:var(--gold)">R$ 10.395,63</td><td class="r">3,7%</td><td class="r pos">+39%</td></tr>
+      <tr><td class="tk">2024</td><td class="r">R$ 635.436</td><td class="r" style="color:var(--gold)">R$ 33.166,54</td><td class="r">5,2%</td><td class="r pos">+219%</td></tr>
+      <tr><td class="tk">2025</td><td class="r">R$ 1.139.000</td><td class="r" style="color:var(--gold)">R$ 68.491,27</td><td class="r">6,0%</td><td class="r pos">+106%</td></tr>
+      <tr><td class="tk">2026</td><td class="r">R$ 1.237.678</td><td class="r" style="color:var(--gold)">R$ 60.054,59</td><td class="r">4,9%</td><td class="r neg">–12%</td></tr>
+    </tbody>
+  </table></div>
+</div></div>
+
+<!-- PROJEÇÃO -->
+<div class="panel" id="panel-projecao"><div class="wrap">
+  <div class="kg" style="margin-bottom:20px">
+    <div class="kc dim"><div class="kl">Capital Inicial</div><div class="kv">1,3M</div><div class="ks">R$ 1.300.000</div></div>
+    <div class="kc dim"><div class="kl">Aporte Mensal</div><div class="kv">20K</div><div class="ks">R$ 20.000/mês</div></div>
+    <div class="kc gold"><div class="kl">Taxa Anual</div><div class="kv big">12%</div><div class="ks">0,949% a.m.</div></div>
+  </div>
+  <div class="sl">Cenários</div>
+  <div class="pg">
+    <div class="pc"><div class="py">5 anos · 2031</div><div class="pv">R$ 3,79M</div><div class="pr">R$ 35.997/mês</div><div class="prl">renda passiva</div></div>
+    <div class="pc"><div class="py">10 anos · 2036</div><div class="pv">R$ 7,96M</div><div class="pr">R$ 75.573/mês</div><div class="prl">renda passiva</div></div>
+    <div class="pc feat"><div class="py" style="color:var(--gold)">🎯 15 anos · 2041</div><div class="pv" style="font-size:1.15rem">R$ 29,97M</div><div class="pr" style="font-size:.78rem">R$ 284.434/mês</div><div class="prl">meta R$ 15M</div></div>
+    <div class="pc"><div class="py">20 anos · 2046</div><div class="pv">R$ 51,98M</div><div class="pr">R$ 493.211/mês</div><div class="prl">renda passiva</div></div>
+  </div>
+  <div class="sl">Curva de crescimento</div>
+  <div class="ac" style="padding:24px"><div id="projbars" style="display:flex;align-items:flex-end;gap:4px;height:130px;margin-bottom:4px"></div></div>
+</div></div>
+
+<!-- PREÇO TETO -->
+<div class="panel" id="panel-teto"><div class="wrap">
+  <div style="font-size:.58rem;color:var(--muted2);margin-bottom:16px">Preço teto = DY anual ÷ 6% · cotações ao vivo via BRAPI</div>
+  <div class="tw"><table>
+    <thead><tr><th>Ticket</th><th class="r">Preço Teto</th><th class="r">Cotação</th><th class="r">VPA</th><th class="r">P/VP</th><th class="r">Margem</th><th class="r">DY Ref.</th><th class="r">Status</th></tr></thead>
+    <tbody id="tetotb"></tbody>
+  </table></div>
+</div></div>
+
+<div class="toast" id="toast"></div>
+
+<!-- Firebase CDN (não-modular, compatível com qualquer browser) -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+<script>
+// ═══════════════ CONFIG ═══════════════
+const FIREBASE_CFG = {
+  apiKey:            "AIzaSyBFwwQZ7xG1rRsyRz4F03rmVuqzqYapjrA",
+  authDomain:        "wealthy-tracker-4013d.firebaseapp.com",
+  databaseURL:       "https://wealthy-tracker-4013d-default-rtdb.firebaseio.com",
+  projectId:         "wealthy-tracker-4013d",
+  storageBucket:     "wealthy-tracker-4013d.firebasestorage.app",
+  messagingSenderId: "748883465419",
+  appId:             "1:748883465419:web:fadd5404e74c5f6818374e"
+};
+const BRAPI_TOKEN = "xwZipoRoS1YXVU3QvRZ7Bz";
+
+const TETO = [
+  {t:'BBSE3',pt:58.33,vpa:4.85, dv:3.50},
+  {t:'VALE3',pt:66.67,vpa:45.55,dv:4.00},
+  {t:'BBAS3',pt:40.83,vpa:31.34,dv:2.45},
+  {t:'BBDC3',pt:15.00,vpa:15.82,dv:0.90},
+  {t:'ISAE4',pt:30.00,vpa:30.46,dv:1.80},
+];
+
+const DEFAULT_STATE = {
+  stocks:[
+    {t:'BBSE3',qtd:16100,pm:35.51},{t:'BBAS3',qtd:11300,pm:23.46},
+    {t:'VALE3',qtd:3000,pm:59.86},{t:'BBDC3',qtd:7400,pm:12.29},
+    {t:'PETR4',qtd:1000,pm:30.28},{t:'BBDC4',qtd:2500,pm:12.66},
+    {t:'CXSE3',qtd:1236,pm:14.95},{t:'IRBR3',qtd:400,pm:79.75},
+    {t:'ISAE4',qtd:700,pm:23.64},{t:'RANI3',qtd:107,pm:9.43},
+    {t:'BITI11',qtd:15,pm:31.85},
+  ],
+  rf:[
+    {n:'XP – ARX HEDGE',rem:'—',venc:'—',v:33414.46},
+    {n:'BRADESCO – PREVI',rem:'—',venc:'Dez/2035',v:4212.88},
+    {n:'LCA JURO MENSAL XP',rem:'Mensal',venc:'Mai/2027',v:4000.00},
+    {n:'C6 IPCA 5 ANOS',rem:'IPCA+7% a.a.',venc:'Dez/2027',v:3281.85},
+    {n:'C6 PRÉ 5 ANOS',rem:'12,65% a.a.',venc:'Out/2027',v:2699.38},
+    {n:'C6 PRÉ 5 ANOS',rem:'11,55% a.a.',venc:'Dez/2026',v:1430.10},
+    {n:'LCA JURO MENSAL XP',rem:'Mensal',venc:'Jun/2027',v:1000.00},
+    {n:'BRADESCO – DEBENTURES II',rem:'—',venc:'—',v:623.73},
+  ],
+  re:[
+    {n:'Max DI',tipo:'DI',venc:'—',v:40900.00},
+    {n:'XP LCA JUN/28',tipo:'LCA',venc:'Jun/2028',v:43660.23},
+    {n:'XP LCA AGO/28',tipo:'LCA',venc:'Ago/2028',v:10597.07},
+    {n:'Bradesco',tipo:'CDB',venc:'—',v:31756.89},
+    {n:'ARX Fuji',tipo:'Fundo',venc:'—',v:18303.00},
+    {n:'NU DI',tipo:'DI',venc:'—',v:107.87},
+  ],
+  dol:[
+    {n:'CASH',usd:10089.00},
+    {n:'BRADESCO BANK SSEEF',usd:5722.20},
+    {n:'XP INVEST',usd:3298.58},
+    {n:'NOMAD WILL INVEST',usd:1000.00},
+    {n:'NOMAD FLÁ',usd:388.00},
+    {n:'BRADESCO BANK',usd:153.57},
+  ],
+  kids:21462.30,
+};
+
+// ═══════════════ STATE ═══════════════
+var S = JSON.parse(JSON.stringify(DEFAULT_STATE));
+var Q = {};
+var usdRate = 5.2369;
+var saveTimer = null;
+var db = null;
+var stRef = null;
+
+// ═══════════════ FIREBASE INIT ═══════════════
+function initFirebase() {
+  try {
+    firebase.initializeApp(FIREBASE_CFG);
+    db = firebase.database();
+    stRef = db.ref('wealthy/state');
+
+    stRef.on('value', function(snap) {
+      var val = snap.val();
+      if (val) {
+        S = val;
+        ['stocks','rf','re','dol'].forEach(function(k) {
+          if (S[k] && !Array.isArray(S[k])) S[k] = Object.values(S[k]);
+        });
+      }
+      setDot('on','☁ sincronizado');
+      document.getElementById('rfbtn').disabled = false;
+      renderAll();
+      fetchQuotes();
+    });
+  } catch(e) {
+    console.error('Firebase init error:', e);
+    setDot('err','Firebase offline');
+    document.getElementById('rfbtn').disabled = false;
+    renderAll();
+    fetchQuotes();
+  }
+}
+
+function save() {
+  if (!stRef) return;
+  setDot('saving','salvando...');
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(function() {
+    stRef.set(S)
+      .then(function() {
+        var t = new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+        setDot('on','☁ salvo · '+t);
+        toast('✓ Salvo na nuvem','gt');
+      })
+      .catch(function(e) {
+        setDot('err','erro ao salvar');
+        toast('✗ Erro ao salvar','rt');
+        console.error(e);
+      });
+  }, 800);
+}
+
+function setDot(cls,text) {
+  document.getElementById('dot').className = 'dot '+cls;
+  document.getElementById('lbl').textContent = text;
+}
+
+// ═══════════════ BRAPI ═══════════════
+function fetchQuotes() {
+  var btn = document.getElementById('rfbtn');
+  btn.disabled = true; btn.textContent = '↻ buscando...';
+  var tickers = S.stocks.map(function(s){return s.t;}).filter(function(v,i,a){return a.indexOf(v)===i;});
+  var symbols = tickers.concat(['USDBRL']).join(',');
+  fetch('https://brapi.dev/api/quote/'+symbols+'?token='+BRAPI_TOKEN)
+    .then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
+    .then(function(data) {
+      if (!data.results || !data.results.length) throw new Error('sem dados');
+      data.results.forEach(function(q) {
+        if (q.symbol === 'USDBRL') usdRate = q.regularMarketPrice;
+        else Q[q.symbol] = q.regularMarketPrice;
+      });
+      var now = new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+      document.getElementById('v-upd').textContent = now;
+      document.getElementById('err-box').style.display = 'none';
+      toast('✓ Cotações · '+now,'gt');
+    })
+    .catch(function(e) {
+      console.warn('BRAPI:',e);
+      document.getElementById('err-box').style.display = 'block';
+      S.stocks.forEach(function(s){ if(!Q[s.t]) Q[s.t] = s.pm; });
+      toast('⚠ Cotações offline','rt');
+    })
+    .finally(function() {
+      btn.disabled = false; btn.textContent = '↻ COTAÇÕES';
+      renderAll();
+    });
+}
+
+// ═══════════════ FORMATAÇÃO ═══════════════
+function fN(v,d){ d=d===undefined?2:d; return Number(v).toLocaleString('pt-BR',{minimumFractionDigits:d,maximumFractionDigits:d}); }
+function fR(v,d){ return 'R$ '+fN(v,d===undefined?2:d); }
+function fK(v){ if(v>=1e6)return fN(v/1e6,2)+'M'; if(v>=1e3)return fN(v/1e3,1)+'K'; return fN(v,2); }
+
+// ═══════════════ CÁLCULOS ═══════════════
+function calcRows() {
+  return S.stocks.map(function(s) {
+    var pa = Q[s.t] !== undefined ? Q[s.t] : s.pm;
+    return {t:s.t,qtd:s.qtd,pm:s.pm,pa:pa,tot:pa*s.qtd,tinv:s.pm*s.qtd,varp:s.pm>0?(pa/s.pm-1):0};
+  });
+}
+function calcTotals(rows) {
+  var rv=0,inv=0; rows.forEach(function(r){rv+=r.tot;inv+=r.tinv;});
+  var rfT=0; S.rf.forEach(function(i){rfT+=i.v;});
+  var reT=0; S.re.forEach(function(i){reT+=i.v;});
+  var dol=0; S.dol.forEach(function(i){dol+=i.usd;});
+  var dolR=dol*usdRate;
+  return {rv:rv,inv:inv,rfT:rfT,reT:reT,dol:dol,dolR:dolR,total:rv+rfT+reT+dolR+(S.kids||0)};
+}
+
+// ═══════════════ RENDER ═══════════════
+function renderAll() {
+  var rows=calcRows(), t=calcTotals(rows);
+  rVisao(rows,t); rAcoes(rows,t); rRF(t); rDolar(t); rTeto();
+  document.getElementById('h-tot').textContent='R$ '+fK(t.total);
+  document.getElementById('h-usd').textContent=fN(usdRate,4);
+  document.getElementById('h-rv').textContent='R$ '+fK(t.rv);
+}
+
+function setKV(id,v,cls,sub) {
+  var el=document.getElementById(id);
+  el.textContent=v; el.className='kv'+(cls?' '+cls:'');
+  if(sub!==undefined) document.getElementById(id+'-s').innerHTML=sub;
+}
+
+function rVisao(rows,t) {
+  setKV('v-tot',fK(t.total),'big',fR(t.total,0));
+  setKV('v-rv',fK(t.rv),'','<span class="badge pos">'+fN(t.rv/t.total*100,1)+'% do total</span>');
+  setKV('v-re',fK(t.reT),'','<span class="badge neu">'+fN(t.reT/t.total*100,1)+'% do total</span>');
+  setKV('v-dol',fK(t.dolR),'','USD '+fN(t.dol,2)+' · '+fN(t.dolR/t.total*100,1)+'%');
+  setKV('v-rf',fK(t.rfT),'','<span class="badge">'+fN(t.rfT/t.total*100,1)+'% do total</span>');
+  var segs=[{l:'Ações',v:t.rv,c:'#c9a84c'},{l:'Reserva',v:t.reT,c:'#5aabff'},{l:'Dólar',v:t.dolR,c:'#2ec97a'},{l:'RF',v:t.rfT,c:'#a78bfa'},{l:'Kids',v:S.kids,c:'#fb923c'}];
+  var tot=segs.reduce(function(a,s){return a+s.v;},0);
+  document.getElementById('abar').innerHTML=segs.map(function(s){return'<div class="as" style="flex:'+s.v+';background:'+s.c+'" title="'+s.l+': '+fN(s.v/tot*100,1)+'%"></div>';}).join('');
+  document.getElementById('aleg').innerHTML=segs.map(function(s){return'<div class="ai"><div class="ad" style="background:'+s.c+'"></div><span class="an">'+s.l+'</span><span class="ap">'+fN(s.v/tot*100,1)+'%</span></div>';}).join('');
+}
+
+function rAcoes(rows,t) {
+  setKV('a-tot',fK(t.rv),'big');
+  setKV('a-inv',fK(t.inv),'');
+  var res=t.rv-t.inv, resPct=t.inv>0?res/t.inv*100:0;
+  setKV('a-res',(res>=0?'+':'')+fK(Math.abs(res)),res>=0?'pos':'neg','<span class="badge '+(res>=0?'pos':'neg')+'">'+(res>=0?'+':'')+fN(resPct,1)+'%</span>');
+  document.getElementById('stb').innerHTML=rows.map(function(s,i){
+    var vc=s.varp>0?'pos':s.varp<0?'neg':'neu', pct=t.rv>0?s.tot/t.rv:0;
+    return '<tr><td class="tk">'+s.t+'</td>'+
+      '<td class="r"><span class="ed" onclick="editCell(this,\'qtd\','+i+')" onblur="saveCell(this,\'qtd\','+i+')" onkeydown="enterBlur(event,this)">'+fN(s.qtd,0)+'</span></td>'+
+      '<td class="r" style="color:var(--text)">'+fR(s.pa)+'</td>'+
+      '<td class="r"><span class="ed" onclick="editCell(this,\'pm\','+i+')" onblur="saveCell(this,\'pm\','+i+')" onkeydown="enterBlur(event,this)">'+fN(s.pm)+'</span></td>'+
+      '<td class="r '+vc+'">'+(s.varp>=0?'+':'')+fN(s.varp*100,2)+'%</td>'+
+      '<td class="r" style="color:var(--text)">'+fR(s.tot,0)+'</td>'+
+      '<td class="r"><div class="mb-w"><span class="neu">'+fN(pct*100,1)+'%</span><div class="mb"><div class="mb-f" style="width:'+Math.min(pct*100*1.4,100)+'%"></div></div></div></td>'+
+      '<td class="r"><button class="xbtn" onclick="removeStock('+i+')">✕</button></td></tr>';
+  }).join('');
+}
+
+function rRF(t) {
+  setKV('rf-tot',fK(t.rfT),'big'); setKV('re-tot',fK(t.reT),''); setKV('rfre-tot',fK(t.rfT+t.reT),'');
+  document.getElementById('rftb').innerHTML=S.rf.map(function(it,i){return'<tr>'+
+    '<td><span class="ed" onclick="editRF(this,\'rf\',\'n\','+i+')" onblur="saveRF(this,\'rf\',\'n\','+i+')" onkeydown="enterBlur(event,this)" style="font-weight:600;color:var(--text)">'+it.n+'</span></td>'+
+    '<td><span class="ed" onclick="editRF(this,\'rf\',\'rem\','+i+')" onblur="saveRF(this,\'rf\',\'rem\','+i+')" onkeydown="enterBlur(event,this)" style="color:var(--muted2)">'+it.rem+'</span></td>'+
+    '<td><span class="ed" onclick="editRF(this,\'rf\',\'venc\','+i+')" onblur="saveRF(this,\'rf\',\'venc\','+i+')" onkeydown="enterBlur(event,this)" style="color:var(--muted2)">'+it.venc+'</span></td>'+
+    '<td class="r"><span class="ed" onclick="editRF(this,\'rf\',\'v\','+i+')" onblur="saveRF(this,\'rf\',\'v\','+i+')" onkeydown="enterBlur(event,this)" style="color:var(--gold)">'+fR(it.v)+'</span></td>'+
+    '<td class="r neu">'+(t.rfT>0?fN(it.v/t.rfT*100,1):0)+'%</td>'+
+    '<td><button class="xbtn" onclick="removeRF(\'rf\','+i+')">✕</button></td></tr>';}).join('');
+  document.getElementById('retb').innerHTML=S.re.map(function(it,i){return'<tr>'+
+    '<td><span class="ed" onclick="editRF(this,\'re\',\'n\','+i+')" onblur="saveRF(this,\'re\',\'n\','+i+')" onkeydown="enterBlur(event,this)" style="font-weight:600;color:var(--text)">'+it.n+'</span></td>'+
+    '<td style="color:var(--muted2)">'+it.tipo+'</td>'+
+    '<td style="color:var(--muted2)">'+it.venc+'</td>'+
+    '<td class="r"><span class="ed" onclick="editRF(this,\'re\',\'v\','+i+')" onblur="saveRF(this,\'re\',\'v\','+i+')" onkeydown="enterBlur(event,this)" style="color:var(--blue)">'+fR(it.v)+'</span></td>'+
+    '<td class="r neu">'+(t.reT>0?fN(it.v/t.reT*100,1):0)+'%</td>'+
+    '<td><button class="xbtn" onclick="removeRF(\'re\','+i+')">✕</button></td></tr>';}).join('');
+}
+
+function rDolar(t) {
+  setKV('d-usd',fN(t.dol,2),'big'); setKV('d-brl',fK(t.dolR),''); setKV('d-rate',fN(usdRate,4),'');
+  document.getElementById('h-usd').textContent=fN(usdRate,4);
+  var rows=S.dol.map(function(it,i){return'<tr>'+
+    '<td class="tk"><span class="ed" onclick="editDol(this,\'n\','+i+')" onblur="saveDol(this,\'n\','+i+')" onkeydown="enterBlur(event,this)">'+it.n+'</span></td>'+
+    '<td class="r"><span class="ed" onclick="editDol(this,\'usd\','+i+')" onblur="saveDol(this,\'usd\','+i+')" onkeydown="enterBlur(event,this)" style="color:var(--gold)">'+fN(it.usd,2)+'</span></td>'+
+    '<td class="r" style="color:var(--text)">'+fR(it.usd*usdRate,2)+'</td>'+
+    '<td class="r neu">'+(t.dol>0?fN(it.usd/t.dol*100,1):0)+'%</td>'+
+    '<td><button class="xbtn" onclick="removeDol('+i+')">✕</button></td></tr>';}).join('');
+  rows+='<tr style="background:var(--s2);border-top:2px solid var(--border2)"><td class="tk" style="color:var(--gold)">TOTAL</td><td class="r" style="color:var(--gold);font-weight:700">'+fN(t.dol,2)+'</td><td class="r" style="color:var(--gold);font-weight:700">'+fR(t.dolR,2)+'</td><td class="r" style="color:var(--gold)">100%</td><td></td></tr>';
+  document.getElementById('dtb').innerHTML=rows;
+}
+
+function rTeto() {
+  document.getElementById('tetotb').innerHTML=TETO.map(function(item){
+    var pa=Q[item.t]!==undefined?Q[item.t]:null;
+    var pvp=pa?fN(pa/item.vpa,2)+'x':'—';
+    var mg=pa?((item.pt/pa-1)*100):null;
+    var mgS=mg!==null?(mg>0?'+':'')+fN(mg,1)+'%':'—';
+    var mgC=mg===null?'neu':mg>0?'pos':mg<-4?'neg':'neu';
+    var st=pa===null?'':(pa<=item.pt?'ok':Math.abs(mg)<5?'nk':'hi');
+    var stMap={ok:'ABAIXO',hi:'ACIMA',nk:'PRÓXIMO'};
+    var stEl=st?'<span class="st-'+st+'">'+stMap[st]+'</span>':'—';
+    return'<tr><td class="tk">'+item.t+'</td><td class="r">'+fR(item.pt)+'</td><td class="r" style="color:var(--text)">'+(pa?fR(pa):'...')+'</td><td class="r">'+fR(item.vpa)+'</td><td class="r">'+pvp+'</td><td class="r '+mgC+'">'+mgS+'</td><td class="r">'+fR(item.dv)+'</td><td class="r">'+stEl+'</td></tr>';
+  }).join('');
+}
+
+// ═══════════════ EDIÇÃO INLINE ═══════════════
+function enterBlur(e,el){if(e.key==='Enter'){e.preventDefault();el.blur();}}
+function selectAll(el){var r=document.createRange();r.selectNodeContents(el);window.getSelection().removeAllRanges();window.getSelection().addRange(r);}
+
+function editCell(el,f,i){el.contentEditable='true';el.focus();el.textContent=f==='qtd'?String(S.stocks[i].qtd):String(S.stocks[i].pm);selectAll(el);}
+function saveCell(el,f,i){el.contentEditable='false';var v=parseFloat(el.textContent.replace(/[^\d.,]/g,'').replace(',','.'));if(!isNaN(v)&&v>=0){if(f==='qtd')S.stocks[i].qtd=Math.round(v);else S.stocks[i].pm=v;save();}renderAll();}
+
+function editRF(el,l,f,i){el.contentEditable='true';el.focus();el.textContent=f==='v'?String(S[l][i].v):S[l][i][f];selectAll(el);}
+function saveRF(el,l,f,i){el.contentEditable='false';if(f==='v'){var v=parseFloat(el.textContent.replace(/[^\d.,]/g,'').replace(',','.'));if(!isNaN(v)&&v>=0){S[l][i].v=v;save();}}else{S[l][i][f]=el.textContent.trim();save();}renderAll();}
+
+function editDol(el,f,i){el.contentEditable='true';el.focus();el.textContent=f==='usd'?String(S.dol[i].usd):S.dol[i].n;selectAll(el);}
+function saveDol(el,f,i){el.contentEditable='false';if(f==='usd'){var v=parseFloat(el.textContent.replace(/[^\d.,]/g,'').replace(',','.'));if(!isNaN(v)&&v>=0){S.dol[i].usd=v;save();}}else{S.dol[i].n=el.textContent.trim();save();}renderAll();}
+
+// ═══════════════ ADD / REMOVE ═══════════════
+function addStock(){var t=prompt('Ticket (ex: PETR4):');if(!t)return;var q=parseInt(prompt('Quantidade:')||'0');var p=parseFloat(prompt('Preço médio:')||'0');S.stocks.push({t:t.toUpperCase().trim(),qtd:q||0,pm:p||0});save();fetchQuotes();}
+function removeStock(i){if(!confirm('Remover '+S.stocks[i].t+'?'))return;S.stocks.splice(i,1);save();renderAll();}
+function addRF(){S.rf.push({n:'Novo Título',rem:'—',venc:'—',v:0});save();renderAll();}
+function addRE(){S.re.push({n:'Nova Conta',tipo:'—',venc:'—',v:0});save();renderAll();}
+function addDol(){S.dol.push({n:'Nova Conta',usd:0});save();renderAll();}
+function removeRF(l,i){S[l].splice(i,1);save();renderAll();}
+function removeDol(i){S.dol.splice(i,1);save();renderAll();}
+
+// ═══════════════ TABS ═══════════════
+function go(tab,btn){
+  document.querySelectorAll('.nb').forEach(function(b){b.classList.remove('active');});
+  document.querySelectorAll('.panel').forEach(function(p){p.classList.remove('active');});
+  btn.classList.add('active');
+  document.getElementById('panel-'+tab).classList.add('active');
+}
+
+// ═══════════════ TOAST ═══════════════
+function toast(msg,cls){
+  var el=document.getElementById('toast');
+  el.textContent=msg; el.className='toast show '+(cls||'');
+  clearTimeout(el._t); el._t=setTimeout(function(){el.className='toast';},2800);
+}
+
+// ═══════════════ GRÁFICOS ═══════════════
+(function(){
+  var pd=[{y:'2021',v:922},{y:'2022',v:7462},{y:'2023',v:10396},{y:'2024',v:33167},{y:'2025',v:68491},{y:'2026',v:60055}];
+  var pm=Math.max.apply(null,pd.map(function(d){return d.v;}));
+  document.getElementById('pbars').innerHTML=pd.map(function(d,i){
+    var h=Math.round(d.v/pm*130),hi=i===4;
+    return'<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px"><span style="font-family:\'Space Mono\',monospace;font-size:.52rem;color:var(--gold)">'+fK(d.v)+'</span><div style="width:100%;height:'+h+'px;border-radius:4px 4px 0 0;background:'+(hi?'rgba(201,168,76,.3)':'rgba(201,168,76,.1)')+';border:1px solid var(--gold);margin-top:auto"></div><span style="font-family:\'Space Mono\',monospace;font-size:.55rem;color:var(--muted2)">'+d.y+'</span></div>';
+  }).join('');
+  var pr=[1300,1440,1565,1718,1986,3794,4200,4680,5200,5800,7964,8900,9900,11000,12300,29976,33000,36500,40500,51978].map(function(v,i){return{y:2026+i,v:v*1000};});
+  var prm=Math.max.apply(null,pr.map(function(p){return p.v;}));
+  var ms=[2031,2036,2041,2046];
+  document.getElementById('projbars').innerHTML=pr.map(function(p){
+    var h=Math.round(p.v/prm*120),m=ms.indexOf(p.y)>=0;
+    return'<div style="flex:1;cursor:default" title="'+p.y+': '+fK(p.v)+'"><div style="width:100%;height:'+h+'px;border-radius:2px 2px 0 0;background:'+(m?'rgba(201,168,76,.35)':'rgba(201,168,76,.08)')+';border-top:2px solid '+(m?'var(--gold2)':'var(--border2)')+';margin-top:auto"></div></div>';
+  }).join('');
+})();
+
+// ═══════════════ INIT ═══════════════
+window.addEventListener('load', function() {
+  initFirebase();
+  setInterval(fetchQuotes, 5*60*1000);
+});
+</script>
+</body>
+</html>
